@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-
 	var dir = "/home/am/projects/sdk/images/gallery"
 
 	resizeFilesInDir(dir)
@@ -22,10 +21,17 @@ func resizeFilesInDir(dir string) {
 	if err != nil {
 		fmt.Print(err)
 	}
+	if len(filesInDir) < 1 {
+		fmt.Print("Directory contains no files")
+		os.Exit(0)
+	}
 
 	for _, fileName := range filesInDir {
-		resizeFile(path.Join(dir, fileName.Name()))
+		file := path.Join(dir, fileName.Name())
+		resizeFile(file)
 	}
+
+	fmt.Print("All Done")
 	os.Exit(0)
 }
 
@@ -96,7 +102,6 @@ func ShowFormats() {
 	for _, format := range formats {
 		fmt.Println(format)
 	}
-
 }
 
 // IsPortrait prints the current info for a given fileName
