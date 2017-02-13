@@ -24,12 +24,12 @@ func init() {
 func main() {
 	flag.Parse()
 
-	if source != "" {
+	if len(source) < 1 {
 		fmt.Println("Source directory must be provided")
 		os.Exit(1)
 	}
 
-	if dest != "" {
+	if len(dest) < 1 {
 		fmt.Println("Destination directory must be provided")
 		os.Exit(1)
 	}
@@ -56,7 +56,9 @@ func resizeFilesInDir(dir string, dest string, size int) {
 	for _, file := range filesInDir {
 		fileName := file.Name()
 
-		if strings.HasSuffix(fileName, ".jpg") {
+		// @todo import mime/magic and compare the headers
+		// with what image magic supports
+		if strings.HasSuffix(strings.ToLower(fileName), ".jpg") {
 			filePath := path.Join(dir, fileName)
 			resizeFile(filePath)
 		} else {
@@ -95,7 +97,7 @@ func resizeFile(fileName string) {
 		layout = "portrait"
 	} else {
 		newWidth = 200
-		newHeight = 1
+		newHeight = -1
 		layout = "landscape"
 	}
 
