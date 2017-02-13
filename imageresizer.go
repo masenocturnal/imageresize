@@ -1,12 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
-
-	"flag"
+	"strings"
 
 	"github.com/rainycape/magick"
 )
@@ -16,52 +16,52 @@ var dest string
 var width int
 
 func init() {
-
 	flag.StringVar(&source, "src", "", "Directory containing files that we want to convert")
 	flag.StringVar(&dest, "dst", "", "Directory we want to output to")
 	flag.IntVar(&width, "width", 200, "Width to resize to")
 }
 
 func main() {
-	//var dir = "/home/am/projects/sdk/images/gallery"
-	fmt.Println("rar:", flag.Args())
 	flag.Parse()
 
-	fmt.Println("rar: ", source)
-	fmt.Println("foo: ", dest)
-	fmt.Println("tail:", flag.Args())
+	if source != "" {
+		fmt.Println("Source directory must be provided")
+		os.Exit(1)
+	}
 
-	// args := flag.Args()
-	// fmt.Printf("rar %d", len(args))
+	if dest != "" {
+		fmt.Println("Destination directory must be provided")
+		os.Exit(1)
+	}
 
-	/*
-		if len(args) < 1 {
-
-			flag.Usage()
-			os.Exit(2)
-		}
-	*/
 	resizeFilesInDir(source, dest, width)
 }
 
+//
 func resizeFilesInDir(dir string, dest string, size int) {
 	filesInDir, err := ioutil.ReadDir(dir)
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 	}
 	if len(filesInDir) < 1 {
-		fmt.Print("Directory contains no files")
+		fmt.Println("Directory contains no files")
 		os.Exit(2)
 	}
 
 	if size < 1 {
-		fmt.Printf("Size : {size} must be > 0")
+		fmt.Println("Size : {size} must be > 0 ")
 		os.Exit(2)
 	}
 
-	for _, fileName := range filesInDir {
-		file := path.Join(dir, fileName.Name())
-		resizeFile(file)
+	for _, file := range filesInDir {
+		fileName := file.Name()
+
+		if strings.HasSuffix(fileName, ".jpg") {
+			filePath := path.Join(dir, fileName)
+			resizeFile(filePath)
+		} else {
+			fmt.Printf("Skipping %s \n", fileName)
+		}
 	}
 
 	fmt.Print("All Done")
@@ -87,6 +87,8 @@ func resizeFile(fileName string) {
 	var newHeight int
 	var layout string
 
+	// @todo we can later on give
+	// other resizing options
 	if isPortrait {
 		newWidth = 200
 		newHeight = -1
