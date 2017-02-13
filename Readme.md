@@ -1,4 +1,4 @@
-# Image Resize
+# Image Resizer
 
 This is very basic application that uses image magick to iterate through 
 a directory of images and resize them proportionally to a given width. 
