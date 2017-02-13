@@ -7,8 +7,8 @@ Files will be placed in directories according to thier orientation
 
 
 ```
-$ go build main.go 
-$ ./main -src="/home/am/projects/sdk/images/gallery" -dst="/tmp/" -width=200 
+$ go build imageresizer.go 
+$ ./imageresizer -src="/home/am/projects/sdk/images/gallery" -dst="/tmp/" -width=200 
 
 
 
