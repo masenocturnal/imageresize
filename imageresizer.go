@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -49,8 +50,20 @@ func resizeFilesInDir(dir string, dest string, size int) {
 	}
 
 	if size < 1 {
-		fmt.Println("Size : {size} must be > 0 ")
+		fmt.Printf("Size : %v must be > 0 ", size)
 		os.Exit(2)
+	}
+
+	// ensure the destination dir exists
+	dirExist, err := exists(path.Base(dest))
+	if !dirExist {
+		// try and create it
+		err := os.MkdirAll(dest, 0500)
+		if err != nil {
+			fmt.Printf("Could not create dir %s", dest)
+			os.Exit(2)
+		}
+
 	}
 
 	for _, file := range filesInDir {
@@ -60,7 +73,7 @@ func resizeFilesInDir(dir string, dest string, size int) {
 		// with what image magic supports
 		if strings.HasSuffix(strings.ToLower(fileName), ".jpg") {
 			filePath := path.Join(dir, fileName)
-			resizeFile(filePath)
+			resizeFile(filePath, dest)
 		} else {
 			fmt.Printf("Skipping %s \n", fileName)
 		}
@@ -70,15 +83,15 @@ func resizeFilesInDir(dir string, dest string, size int) {
 	os.Exit(0)
 }
 
-func resizeFile(fileName string) {
+func resizeFile(srcFile string, destDir string) {
 
 	var myImage *magick.Image
 	var err error
 
-	myImage, err = magick.DecodeFile(fileName)
+	myImage, err = magick.DecodeFile(srcFile)
 
 	if err != nil {
-		fmt.Println("fileName: {fileName}", fileName)
+		fmt.Println("fileName: {fileName}", srcFile)
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -104,12 +117,13 @@ func resizeFile(fileName string) {
 	newImage, err := myImage.Resize(newWidth, newHeight, magick.FCubic)
 
 	if err != nil {
-		fmt.Printf("Could not resize %s ", fileName)
+		fmt.Printf("Could not resize %s ", srcFile)
 		fmt.Println(err)
 	}
 
-	outputFilename := path.Base(fileName)
-	newFilename := path.Join("/tmp/images", layout, outputFilename)
+	outputFilename := path.Base(srcFile)
+
+	newFilename := path.Join(destDir, layout, outputFilename)
 
 	var imgWritten bool
 
@@ -119,6 +133,7 @@ func resizeFile(fileName string) {
 		if err != nil {
 			fmt.Print(err)
 		}
+
 	}
 
 	fmt.Printf("File: %s has been resized to %d x %d \n", newFilename, newImage.Width(), newImage.Height())
@@ -126,25 +141,15 @@ func resizeFile(fileName string) {
 
 func writeImage(newFilename string, newImage *magick.Image) (bool, error) {
 
-	doesExist, err := exists(path.Base(newFilename))
-
-	// @todo use case
-	if err != nil {
-		return false, err
-	}
-
-	if !doesExist {
-		return false, nil
-	}
-
 	fo, err := os.Create(newFilename)
 
 	if err != nil {
-		return false, err
+		return false, errors.New("Path does not exist")
 	}
 
 	defer fo.Close()
 	newImage.Encode(fo, magick.NewInfo())
+	fmt.Println("File Written to : " + newFilename)
 	return true, nil
 }
 
