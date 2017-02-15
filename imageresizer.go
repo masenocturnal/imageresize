@@ -1,12 +1,12 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/rainycape/magick"
@@ -35,6 +35,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// convert any relative references to absolute
+	source, _ = filepath.Abs(source)
+	dest, _ = filepath.Abs(dest)
 	resizeFilesInDir(source, dest, width)
 }
 
@@ -55,16 +58,26 @@ func resizeFilesInDir(dir string, dest string, size int) {
 	}
 
 	// ensure the destination dir exists
-	dirExist, err := exists(path.Base(dest))
+	dirExist, err := exists(dest)
 	if !dirExist {
 		// try and create it
-		err := os.MkdirAll(dest, 0500)
+		// we are assuming if we have an issue creating the first dir
+		// the second one will suffer the same fate
+		err := os.MkdirAll(dest, 0700)
+
 		if err != nil {
 			fmt.Printf("Could not create dir %s", dest)
 			os.Exit(2)
 		}
-
 	}
+	portraitPath := filepath.Join(dest, "portrait")
+	fmt.Println(portraitPath)
+	err = os.MkdirAll(portraitPath, 0700)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
+	_ = os.MkdirAll(filepath.Join(dest, "landscape"), 0700)
 
 	for _, file := range filesInDir {
 		fileName := file.Name()
@@ -72,7 +85,7 @@ func resizeFilesInDir(dir string, dest string, size int) {
 		// @todo import mime/magic and compare the headers
 		// with what image magic supports
 		if strings.HasSuffix(strings.ToLower(fileName), ".jpg") {
-			filePath := path.Join(dir, fileName)
+			filePath := filepath.Join(dir, fileName)
 			resizeFile(filePath, dest)
 		} else {
 			fmt.Printf("Skipping %s \n", fileName)
@@ -144,7 +157,7 @@ func writeImage(newFilename string, newImage *magick.Image) (bool, error) {
 	fo, err := os.Create(newFilename)
 
 	if err != nil {
-		return false, errors.New("Path does not exist")
+		return false, err
 	}
 
 	defer fo.Close()
